@@ -3,3 +3,5 @@ langchain-ollama
 python-dotenv
 langchain-text-splitters
 pypdf
+chromadb
+langchain-chroma
