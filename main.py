@@ -2,11 +2,12 @@ from dotenv import load_dotenv
 from pypdf import PdfReader
 load_dotenv()
 
+import os
 from langchain.chat_models import init_chat_model
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
-from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_postgres import PGVector
 
 
 def read_pdf(pdf_path):
@@ -19,23 +20,26 @@ def create_chunks(pdf_text):
     texts = text_splitter.split_text(pdf_text)
     return [Document(page_content=t) for t in texts]
 
-def create_vector_store(chunks, embeddings):
-    vector_store = Chroma(
-        collection_name="pdf_collection",
-        embedding_function=embeddings,
-        persist_directory="./chroma_db"
+def create_vector_store(chunks, embeddings, collection_name):
+    vector_store = PGVector(
+        embeddings=embeddings,
+        collection_name=collection_name,
+        connection=os.getenv("DATABASE_URL"),
     )
-    vector_store.reset_collection()
+    vector_store.delete_collection()
+    vector_store.create_collection()
     vector_store.add_documents(chunks)
     return vector_store
 
 def main(question: str):
     embeddings = OllamaEmbeddings(model="nomic-embed-text")
 
-    pdf_text = read_pdf("pdf/sample.pdf")
+    pdf_path = "pdf/sample.pdf"
+    pdf_text = read_pdf(pdf_path)
 
+    collection_name = os.path.basename(pdf_path)  # "sample.pdf"
     chunks = create_chunks(pdf_text)
-    vector_store = create_vector_store(chunks, embeddings)
+    vector_store = create_vector_store(chunks, embeddings, collection_name)
 
     question_embedding = embeddings.embed_query(question)
 
