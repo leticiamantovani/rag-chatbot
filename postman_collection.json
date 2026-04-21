@@ -1,0 +1,47 @@
+{
+  "info": {
+    "name": "RAG Chatbot",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload PDF",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8000/upload",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "collection_name",
+              "value": "solar_system",
+              "type": "text"
+            },
+            {
+              "key": "file",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Chat",
+      "request": {
+        "method": "POST",
+        "url": "http://localhost:8000/chat",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What is Jupiter?\",\n  \"collection_name\": \"solar_system\"\n}"
+        }
+      }
+    }
+  ]
+}
