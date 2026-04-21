@@ -3,5 +3,8 @@ langchain-ollama
 python-dotenv
 langchain-text-splitters
 pypdf
-chromadb
-langchain-chroma
+langchain-core
+langchain-postgres
+fastapi
+uvicorn
+python-multipart
