@@ -10,3 +10,4 @@
 - where the best way to put prompt on the prompt?
 - chat api doesnt have to put collection name - it should retrieve automatically
 - as apis estao lentas
+- testes unitarios - usa?
