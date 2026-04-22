@@ -20,5 +20,6 @@ def chat_service(question: str, collection_name: str):
     context = "\n\n".join([doc.page_content for doc in results])
     prompt = f"Use the context below to answer the question.\n\nContext:\n{context}\n\nQuestion: {question}"
 
-    result = model.invoke(prompt)
-    return result.content
+    for chunk in model.stream(prompt):
+        yield chunk.content
+    
