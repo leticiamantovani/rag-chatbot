@@ -10,5 +10,5 @@ class Message(Base):
     created_at = Column(DateTime, server_default=func.now())
     content = Column(Text, nullable=False)
     role = Column(String, nullable=False)
-    conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False)
-    conversation = relationship("Conversation", back_populates="messages")
+    conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False, index=True)
+    conversation = relationship("Conversation", back_populates="message")
