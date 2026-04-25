@@ -11,3 +11,4 @@
 - chat api doesnt have to put collection name - it should retrieve automatically
 - as apis estao lentas
 - testes unitarios - usa?
+- retorno da api
