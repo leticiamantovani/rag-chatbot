@@ -8,3 +8,6 @@ langchain-postgres
 fastapi
 uvicorn
 python-multipart
+alembic
+sqlalchemy 
+psycopg2-binary

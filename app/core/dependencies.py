@@ -3,6 +3,7 @@ from langchain_core.documents import Document
 from app.core.config import get_vector_store
 from langchain_ollama import OllamaEmbeddings
 from langchain.chat_models import init_chat_model
+from app.db.session import SessionLocal
 
 def create_vector_store(chunks, embeddings, collection_name):
     vector_store = get_vector_store(embeddings, collection_name)
@@ -29,3 +30,10 @@ def create_embeddings():
 
 def create_model():
     return init_chat_model("ollama:llama3.1")
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
