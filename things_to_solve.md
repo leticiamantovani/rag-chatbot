@@ -12,3 +12,9 @@
 - as apis estao lentas
 - testes unitarios - usa?
 - retorno da api
+
+embeddings = create_embeddings() e model = create_model() em module level (chat_service.py:9-10) — anti-pattern. Roda no import, dificulta teste, dificulta swap. Idealmente injetar via Depends. Vale uma refatoração separada.
+Histórico crescendo sem bound — em conversas longas, list_by_conversation carrega tudo e injeta no prompt. Em produção: paginação ou janela deslizante (últimas N mensagens) ou summarização.
+Prompt template — hoje é f-string inline no service. Em produção, costuma ser um arquivo separado / langchain.PromptTemplate.
+
+- logging e exceptions

@@ -3,9 +3,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class ConversationCreate(BaseModel):
-    message: str
-
 class MessageResponse(BaseModel):
     id: UUID
     content: str

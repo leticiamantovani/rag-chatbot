@@ -1,7 +1,26 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
 from app.routers import chat, upload, conversations
+from app.core.exceptions import DomainError
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+
+@app.exception_handler(DomainError)
+def domain_error_handler(_request: Request, exc: DomainError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
+
+
+@app.exception_handler(Exception)
+def unhandled_exception_handler(_request: Request, exc: Exception):
+    logger.exception("Unhandled exception", exc_info=exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
 
 app.include_router(chat.router)
 app.include_router(upload.router)
