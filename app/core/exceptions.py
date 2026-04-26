@@ -1,6 +1,6 @@
 class DomainError(Exception):
-    """Base for business rule errors."""
-    status_code: int = 500
+    """Base for business rule errors"""
+    status_code: int = 400
 
 
 class NotFoundError(DomainError):
@@ -25,4 +25,3 @@ class PermissionDeniedError(DomainError):
 
 class ConversationNotFoundError(NotFoundError):
     pass
-
