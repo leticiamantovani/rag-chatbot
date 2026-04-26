@@ -3,7 +3,7 @@ from app.core.dependencies import create_embeddings, create_model
 from sqlalchemy.orm import Session
 from app.db.models.messages import Message
 from app.db.models.conversations import Conversation
-from fastapi import HTTPException
+from app.core.exceptions import ConversationNotFoundError
 from uuid import UUID
 
 embeddings = create_embeddings()
@@ -44,7 +44,7 @@ def resolve_conversation(db: Session, conversation_id: UUID | None = None) -> Co
     if conversation_id:
         conversation = db.get(Conversation, conversation_id)
         if not conversation:
-            raise
+            raise ConversationNotFoundError(f"Conversation not found: {conversation_id}")
         return conversation
     conversation = Conversation()
     db.add(conversation)
