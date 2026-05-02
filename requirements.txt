@@ -9,5 +9,6 @@ fastapi
 uvicorn
 python-multipart
 alembic
-sqlalchemy 
+sqlalchemy
+asyncpg
 psycopg2-binary

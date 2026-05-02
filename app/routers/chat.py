@@ -12,18 +12,18 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 
 
 @router.post("", response_class=StreamingResponse)
-def get_answer(
+async def get_answer(
     request: ChatRequest,
     conversation_id: UUID | None = None,
     chat_service: ChatService = Depends(get_chat_service),
     conversation_service: ConversationService = Depends(get_conversation_service),
 ):
-    conversation = conversation_service.resolve(conversation_id)
-    response = chat_service.stream_answer(
+    conversation = await conversation_service.resolve(conversation_id)
+    stream = await chat_service.stream_answer(
         conversation, request.question, request.collection_name
     )
     return StreamingResponse(
-        response,
+        stream,
         media_type="text/plain",
         headers={"X-Conversation-ID": str(conversation.id)},
     )

@@ -12,7 +12,10 @@ import app.db.models as models
 from alembic import context
 
 config = context.config
-config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
+
+# Alembic uses the sync psycopg2 driver — strip +asyncpg if present
+_db_url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+config.set_main_option("sqlalchemy.url", _db_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
