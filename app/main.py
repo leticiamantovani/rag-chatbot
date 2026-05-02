@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.routers import chat, upload, conversations
@@ -9,6 +10,14 @@ from app.core.exceptions import DomainError
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Conversation-ID"],
+)
 
 
 @app.exception_handler(DomainError)

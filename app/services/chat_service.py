@@ -1,9 +1,10 @@
-from collections.abc import Iterator
+import asyncio
+from collections.abc import AsyncIterator
 from typing import TypedDict
 from uuid import UUID
 
 from langgraph.graph import END, StateGraph
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_vector_store
 from app.core.dependencies import create_embeddings, create_model
@@ -23,10 +24,12 @@ class RAGState(TypedDict):
     answer: str
 
 
-def _retrieve_docs(state: RAGState) -> dict:
-    question_embedding = embeddings.embed_query(state["question"])
+async def _retrieve_docs(state: RAGState) -> dict:
+    question_embedding = await asyncio.to_thread(embeddings.embed_query, state["question"])
     vector_store = get_vector_store(embeddings, state["collection_name"])
-    results = vector_store.similarity_search_by_vector(question_embedding, k=2)
+    results = await asyncio.to_thread(
+        vector_store.similarity_search_by_vector, question_embedding, k=2
+    )
     context = "\n\n".join(doc.page_content for doc in results)
     return {"context": context}
 
@@ -41,9 +44,9 @@ def _build_prompt(state: RAGState) -> str:
     )
 
 
-def _generate_answer(state: RAGState) -> dict:
+async def _generate_answer(state: RAGState) -> dict:
     prompt = _build_prompt(state)
-    response = model.invoke(prompt)
+    response = await model.ainvoke(prompt)
     return {"answer": response.content}
 
 
@@ -64,32 +67,32 @@ rag_graph = _build_graph()
 
 
 class ChatService:
-    def __init__(self, db: Session, message_repo: MessageRepository):
+    def __init__(self, db: AsyncSession, message_repo: MessageRepository):
         self.db = db
         self.message_repo = message_repo
 
-    def stream_answer(
+    async def stream_answer(
         self,
         conversation: Conversation,
         question: str,
         collection_name: str,
-    ) -> Iterator[str]:
-        history = self.message_repo.list_by_conversation(conversation.id)
+    ) -> AsyncIterator[str]:
+        history = await self.message_repo.list_by_conversation(conversation.id)
 
         self.message_repo.add(
             Message(conversation_id=conversation.id, content=question, role="user")
         )
-        self.db.commit()
+        await self.db.commit()
 
         return self._stream(conversation, question, collection_name, history)
 
-    def _stream(
+    async def _stream(
         self,
         conversation: Conversation,
         question: str,
         collection_name: str,
         history: list[Message],
-    ) -> Iterator[str]:
+    ) -> AsyncIterator[str]:
         initial_state: RAGState = {
             "question": question,
             "collection_name": collection_name,
@@ -101,12 +104,12 @@ class ChatService:
 
         buffer: list[str] = []
         try:
-            for chunk in rag_graph.stream(initial_state):
-                if "generate" in chunk:
-                    answer = chunk["generate"].get("answer", "")
-                    if answer:
-                        buffer.append(answer)
-                        yield answer
+            async for event in rag_graph.astream_events(initial_state, version="v2"):
+                if event["event"] == "on_chat_model_stream":
+                    token = event["data"]["chunk"].content
+                    if token:
+                        buffer.append(token)
+                        yield token
         finally:
             if buffer:
                 self.message_repo.add(
@@ -116,4 +119,4 @@ class ChatService:
                         role="assistant",
                     )
                 )
-                self.db.commit()
+                await self.db.commit()

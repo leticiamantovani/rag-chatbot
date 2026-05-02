@@ -10,23 +10,23 @@ router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=ConversationResponse)
-def create_conversation(
+async def create_conversation(
     service: ConversationService = Depends(get_conversation_service),
 ):
-    return service.create()
+    return await service.create()
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
-def get_conversation(
+async def get_conversation(
     conversation_id: UUID,
     service: ConversationService = Depends(get_conversation_service),
 ):
-    return service.get(conversation_id)
+    return await service.get(conversation_id)
 
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageResponse])
-def list_messages(
+async def list_messages(
     conversation_id: UUID,
     service: ConversationService = Depends(get_conversation_service),
 ):
-    return service.list_messages(conversation_id)
+    return await service.list_messages(conversation_id)
