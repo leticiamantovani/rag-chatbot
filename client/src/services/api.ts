@@ -1,8 +1,50 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 
+function getToken(): string | null {
+  return localStorage.getItem("token")
+}
+
+function authHeaders(): HeadersInit {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function register(email: string, password: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.detail ?? `HTTP ${response.status}`)
+  }
+}
+
+export async function login(email: string, password: string): Promise<void> {
+  const response = await fetch(`${BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    throw new Error(data.detail ?? "Invalid credentials")
+  }
+  const { access_token } = await response.json()
+  localStorage.setItem("token", access_token)
+}
+
+export function logout(): void {
+  localStorage.removeItem("token")
+}
+
+export function isAuthenticated(): boolean {
+  return !!getToken()
+}
+
 export async function streamChat(
   question: string,
-  collectionName: string,
   conversationId: string | null,
   onChunk: (chunk: string) => void,
   onDone: (conversationId: string) => void,
@@ -13,8 +55,8 @@ export async function streamChat(
 
   const response = await fetch(url.toString(), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, collection_name: collectionName }),
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ question }),
     signal,
   })
 
@@ -34,12 +76,14 @@ export async function streamChat(
   onDone(newConversationId)
 }
 
-export async function uploadPdf(file: File, collectionName: string): Promise<{ collection_name: string }> {
+export async function uploadPdf(file: File): Promise<void> {
   const form = new FormData()
   form.append("file", file)
-  form.append("collection_name", collectionName)
 
-  const response = await fetch(`${BASE_URL}/upload`, { method: "POST", body: form })
+  const response = await fetch(`${BASE_URL}/upload`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: form,
+  })
   if (!response.ok) throw new Error(`Upload failed: HTTP ${response.status}`)
-  return response.json()
 }

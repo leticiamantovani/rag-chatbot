@@ -3,11 +3,10 @@ import { useDropzone } from "react-dropzone"
 import { uploadPdf } from "../services/api"
 
 interface Props {
-  collectionName: string
   onUploadSuccess: (message: string) => void
 }
 
-export function PdfDropzone({ collectionName, onUploadSuccess }: Props) {
+export function PdfDropzone({ onUploadSuccess }: Props) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,15 +19,15 @@ export function PdfDropzone({ collectionName, onUploadSuccess }: Props) {
       setError(null)
 
       try {
-        await uploadPdf(file, collectionName)
-        onUploadSuccess(`"${file.name}" uploaded and indexed into collection "${collectionName}".`)
+        await uploadPdf(file)
+        onUploadSuccess(`"${file.name}" uploaded and indexed successfully.`)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed")
       } finally {
         setUploading(false)
       }
     },
-    [collectionName, onUploadSuccess]
+    [onUploadSuccess]
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

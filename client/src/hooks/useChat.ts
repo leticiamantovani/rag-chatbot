@@ -1,17 +1,14 @@
 import { useCallback, useRef, useState } from "react"
 import { streamChat } from "../services/api"
-import type { ChatState, Message } from "../types"
+import type { Message } from "../types"
 
 function randomId() {
   return Math.random().toString(36).slice(2)
 }
 
-export function useChat(collectionName: string) {
-  const [state, setState] = useState<ChatState>({
-    messages: [],
-    conversationId: null,
-    collectionName,
-  })
+export function useChat() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -25,30 +22,23 @@ export function useChat(collectionName: string) {
       const assistantId = randomId()
       const assistantMsg: Message = { id: assistantId, role: "assistant", content: "", streaming: true }
 
-      setState((s) => ({ ...s, messages: [...s.messages, userMsg, assistantMsg] }))
+      setMessages((prev) => [...prev, userMsg, assistantMsg])
       setLoading(true)
 
       try {
         await streamChat(
           question,
-          collectionName,
-          state.conversationId,
+          conversationId,
           (chunk) => {
-            setState((s) => ({
-              ...s,
-              messages: s.messages.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + chunk } : m
-              ),
-            }))
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + chunk } : m))
+            )
           },
           (newConversationId) => {
-            setState((s) => ({
-              ...s,
-              conversationId: newConversationId,
-              messages: s.messages.map((m) =>
-                m.id === assistantId ? { ...m, streaming: false } : m
-              ),
-            }))
+            setConversationId(newConversationId)
+            setMessages((prev) =>
+              prev.map((m) => (m.id === assistantId ? { ...m, streaming: false } : m))
+            )
           },
           controller.signal
         )
@@ -56,8 +46,8 @@ export function useChat(collectionName: string) {
         setLoading(false)
       }
     },
-    [collectionName, state.conversationId]
+    [conversationId]
   )
 
-  return { messages: state.messages, conversationId: state.conversationId, loading, sendMessage }
+  return { messages, conversationId, loading, sendMessage }
 }
