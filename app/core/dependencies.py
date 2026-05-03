@@ -32,7 +32,11 @@ def create_chunks(pdf_text: str) -> list[Document]:
 
 
 def create_embeddings() -> GoogleGenerativeAIEmbeddings:
-    return GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+    return GoogleGenerativeAIEmbeddings(
+        model="models/gemini-embedding-001",
+        task_type="retrieval_document",
+        output_dimensionality=768,
+    )
 
 
 def create_model():
