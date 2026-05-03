@@ -1,5 +1,5 @@
 langchain
-langchain-ollama
+langchain-google-genai
 python-dotenv
 langchain-text-splitters
 pypdf
@@ -11,5 +11,6 @@ python-multipart
 alembic
 sqlalchemy
 asyncpg
-psycopg2-binarypython-jose[cryptography]
+psycopg2-binary
+python-jose[cryptography]
 passlib[bcrypt]

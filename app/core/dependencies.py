@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langchain.chat_models import init_chat_model
 from langchain_core.documents import Document
-from langchain_ollama import OllamaEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,12 +31,12 @@ def create_chunks(pdf_text: str) -> list[Document]:
     return [Document(page_content=t) for t in texts]
 
 
-def create_embeddings() -> OllamaEmbeddings:
-    return OllamaEmbeddings(model="nomic-embed-text")
+def create_embeddings() -> GoogleGenerativeAIEmbeddings:
+    return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
 
 
 def create_model():
-    return init_chat_model("ollama:llama3.1")
+    return init_chat_model("google_genai:gemini-2.0-flash")
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
