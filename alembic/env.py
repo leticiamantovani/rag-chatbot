@@ -13,8 +13,12 @@ from alembic import context
 
 config = context.config
 
-# Alembic uses the sync psycopg2 driver — strip +asyncpg if present
-_db_url = os.getenv("DATABASE_URL", "").replace("+asyncpg", "")
+# Alembic uses the sync psycopg2 driver — strip +asyncpg and fix ssl param
+_db_url = (
+    os.getenv("DATABASE_URL", "")
+    .replace("+asyncpg", "")
+    .replace("ssl=require", "sslmode=require")
+)
 config.set_main_option("sqlalchemy.url", _db_url)
 
 if config.config_file_name is not None:

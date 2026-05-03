@@ -11,4 +11,5 @@ python-multipart
 alembic
 sqlalchemy
 asyncpg
-psycopg2-binary
+psycopg2-binarypython-jose[cryptography]
+passlib[bcrypt]

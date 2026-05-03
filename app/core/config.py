@@ -1,7 +1,20 @@
-from langchain_postgres import PGVector
-from dotenv import load_dotenv
-load_dotenv()
 import os
+
+from dotenv import load_dotenv
+from langchain_postgres import PGVector
+from pydantic_settings import BaseSettings
+
+load_dotenv()
+
+
+class Settings(BaseSettings):
+    jwt_secret: str = os.getenv("JWT_SECRET", "change-me-in-production")
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60 * 24 * 7  # 7 days
+
+
+settings = Settings()
+
 
 def get_vector_store(embeddings, collection_name):
     sync_url = (

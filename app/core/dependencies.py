@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 
 from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langchain.chat_models import init_chat_model
 from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
@@ -72,3 +73,13 @@ def get_chat_service(
 ):
     from app.services.chat_service import ChatService
     return ChatService(db, message_repo)
+
+
+_bearer = HTTPBearer()
+
+
+async def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+) -> str:
+    from app.services.auth_service import decode_token
+    return decode_token(credentials.credentials)
