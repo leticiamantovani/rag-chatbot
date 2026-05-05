@@ -76,8 +76,12 @@ class ChatService:
         conversation: Conversation,
         question: str,
         collection_name: str,
+        auto_title: str | None = None,
     ) -> AsyncIterator[str]:
         history = await self.message_repo.list_by_conversation(conversation.id)
+
+        if auto_title:
+            conversation.title = auto_title
 
         self.message_repo.add(
             Message(conversation_id=conversation.id, content=question, role="user")

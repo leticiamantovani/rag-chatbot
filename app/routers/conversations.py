@@ -2,18 +2,27 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.core.dependencies import get_conversation_service
-from app.schema.conversations import ConversationResponse, MessageResponse
+from app.core.dependencies import get_conversation_service, get_current_user_id
+from app.schema.conversations import ConversationListItem, ConversationResponse, MessageResponse
 from app.services.conversation_service import ConversationService
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=ConversationResponse)
-async def create_conversation(
+@router.get("", response_model=list[ConversationListItem])
+async def list_conversations(
+    user_id: str = Depends(get_current_user_id),
     service: ConversationService = Depends(get_conversation_service),
 ):
-    return await service.create()
+    return await service.list_by_user(UUID(user_id))
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=ConversationResponse)
+async def create_conversation(
+    user_id: str = Depends(get_current_user_id),
+    service: ConversationService = Depends(get_conversation_service),
+):
+    return await service.create(UUID(user_id))
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)

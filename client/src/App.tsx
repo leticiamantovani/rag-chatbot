@@ -1,13 +1,14 @@
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { ChatInput } from "./components/ChatInput"
+import { ConversationSidebar } from "./components/ConversationSidebar"
 import { MessageList } from "./components/MessageList"
 import { PdfDropzone } from "./components/PdfDropzone"
 import { useChat } from "./hooks/useChat"
 import "./index.css"
 import { LoginPage } from "./pages/LoginPage"
-import { isAuthenticated, logout } from "./services/api"
-import type { Message } from "./types"
+import { isAuthenticated, listConversations, logout } from "./services/api"
+import type { Conversation, Message } from "./types"
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated()) return <Navigate to="/login" replace />
@@ -15,8 +16,58 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function ChatPage() {
-  const { messages, loading, sendMessage } = useChat()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [sidebarLoading, setSidebarLoading] = useState(false)
   const [systemMessages, setSystemMessages] = useState<Message[]>([])
+
+  // sessionKey changes only when the user deliberately switches conversation or clicks New.
+  // It never changes when the backend assigns an ID to a brand-new conversation.
+  const [sessionKey, setSessionKey] = useState(() => `new-${Date.now()}`)
+  const [sessionConversationId, setSessionConversationId] = useState<string | null>(null)
+
+  const { messages, conversationId, loading, historyLoading, sendMessage } = useChat({
+    sessionKey,
+    conversationId: sessionConversationId,
+  })
+
+  // Track the last known backend ID so we can refresh the sidebar once after creation
+  const lastConvIdRef = useRef<string | null>(null)
+
+  const refreshConversations = useCallback(async () => {
+    setSidebarLoading(true)
+    try {
+      const list = await listConversations()
+      setConversations(list)
+    } finally {
+      setSidebarLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshConversations()
+  }, [refreshConversations])
+
+  // Refresh sidebar when a new conversation is confirmed by the backend
+  useEffect(() => {
+    if (conversationId && conversationId !== lastConvIdRef.current) {
+      lastConvIdRef.current = conversationId
+      refreshConversations()
+    }
+  }, [conversationId, refreshConversations])
+
+  const handleSelectConversation = useCallback((id: string) => {
+    lastConvIdRef.current = id
+    setSessionConversationId(id)
+    setSessionKey(id)          // new sessionKey → useChat resets + loads history
+    setSystemMessages([])
+  }, [])
+
+  const handleNewConversation = useCallback(() => {
+    lastConvIdRef.current = null
+    setSessionConversationId(null)
+    setSessionKey(`new-${Date.now()}`)   // new sessionKey → useChat resets to empty
+    setSystemMessages([])
+  }, [])
 
   const handleUploadSuccess = useCallback((content: string) => {
     setSystemMessages((prev) => [
@@ -26,20 +77,31 @@ function ChatPage() {
   }, [])
 
   const allMessages = [...systemMessages, ...messages]
+  const isEmpty = allMessages.length === 0 && !historyLoading
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1>RAG Chatbot</h1>
-        <button className="app__logout" onClick={logout}>Logout</button>
-      </header>
+    <div className="layout">
+      <ConversationSidebar
+        conversations={conversations}
+        activeId={conversationId}
+        onSelect={handleSelectConversation}
+        onNew={handleNewConversation}
+        loading={sidebarLoading}
+      />
 
-      <PdfDropzone onUploadSuccess={handleUploadSuccess} />
+      <div className="main">
+        <header className="main__header">
+          <PdfDropzone onUploadSuccess={handleUploadSuccess} />
+          <button className="app__logout" onClick={logout}>Logout</button>
+        </header>
 
-      <main className="app__chat">
-        <MessageList messages={allMessages} />
-        <ChatInput onSend={sendMessage} disabled={loading} />
-      </main>
+        <main className="app__chat">
+          {historyLoading && <div className="chat__empty"><p>Loading messages...</p></div>}
+          {isEmpty && <div className="chat__empty"><p>Ask anything about your documents</p></div>}
+          <MessageList messages={allMessages} />
+          <ChatInput onSend={sendMessage} disabled={loading || historyLoading} />
+        </main>
+      </div>
     </div>
   )
 }

@@ -25,20 +25,27 @@ class ConversationService:
             raise ConversationNotFoundError(f"Conversation not found: {conversation_id}")
         return conversation
 
-    async def create(self) -> Conversation:
-        conversation = Conversation()
+    async def create(self, user_id: UUID, title: str | None = None) -> Conversation:
+        conversation = Conversation(user_id=user_id, title=title)
         self.conversation_repo.add(conversation)
         await self.db.commit()
         await self.db.refresh(conversation)
         return conversation
 
-    async def resolve(self, conversation_id: UUID | None) -> Conversation:
+    async def resolve(self, user_id: UUID, conversation_id: UUID | None) -> Conversation:
         if conversation_id:
             return await self.get(conversation_id)
-        conversation = Conversation()
+        conversation = Conversation(user_id=user_id)
         self.conversation_repo.add(conversation)
         await self.db.flush()
         return conversation
+
+    async def list_by_user(self, user_id: UUID) -> list[Conversation]:
+        return await self.conversation_repo.list_by_user(user_id)
+
+    async def update_title(self, conversation: Conversation, title: str) -> None:
+        conversation.title = title
+        await self.db.commit()
 
     async def list_messages(self, conversation_id: UUID) -> list[Message]:
         await self.get(conversation_id)

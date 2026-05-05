@@ -1,3 +1,5 @@
+import type { Conversation } from "../types"
+
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 
 function getToken(): string | null {
@@ -41,6 +43,38 @@ export function logout(): void {
 
 export function isAuthenticated(): boolean {
   return !!getToken()
+}
+
+export interface ApiMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  created_at: string
+}
+
+export async function getConversationMessages(conversationId: string): Promise<ApiMessage[]> {
+  const response = await fetch(`${BASE_URL}/conversations/${conversationId}/messages`, {
+    headers: { ...authHeaders() },
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
+
+export async function listConversations(): Promise<Conversation[]> {
+  const response = await fetch(`${BASE_URL}/conversations`, {
+    headers: { ...authHeaders() },
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
+}
+
+export async function createConversation(): Promise<Conversation> {
+  const response = await fetch(`${BASE_URL}/conversations`, {
+    method: "POST",
+    headers: { ...authHeaders() },
+  })
+  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  return response.json()
 }
 
 export async function streamChat(

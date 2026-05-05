@@ -10,8 +10,17 @@ class MessageResponse(BaseModel):
     created_at: datetime
     model_config = {"from_attributes": True}
 
+
 class ConversationResponse(BaseModel):
     id: UUID
+    title: str | None
     created_at: datetime
     messages: list[MessageResponse] = []
+    model_config = {"from_attributes": True}
+
+
+class ConversationListItem(BaseModel):
+    id: UUID
+    title: str | None
+    created_at: datetime
     model_config = {"from_attributes": True}

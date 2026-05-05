@@ -19,9 +19,13 @@ async def get_answer(
     chat_service: ChatService = Depends(get_chat_service),
     conversation_service: ConversationService = Depends(get_conversation_service),
 ):
-    conversation = await conversation_service.resolve(conversation_id)
+    uid = UUID(user_id)
+    conversation = await conversation_service.resolve(uid, conversation_id)
+
+    auto_title = request.question[:60].strip() if not conversation.title else None
+
     stream = await chat_service.stream_answer(
-        conversation, request.question, f"user_{user_id}"
+        conversation, request.question, f"user_{user_id}", auto_title
     )
     return StreamingResponse(
         stream,
