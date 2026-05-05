@@ -1,7 +1,7 @@
 import asyncio
 from collections.abc import AsyncIterator
 from typing import TypedDict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from langgraph.graph import END, StateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -88,7 +88,11 @@ class ChatService:
         )
         await self.db.commit()
 
-        return self._stream(conversation, question, collection_name, history)
+        # Capture the tracing context here (inside the request) and pass it
+        # into the generator so LangSmith receives the run even after the
+        # async handoff to StreamingResponse.
+        run_id = uuid4()
+        return self._stream(conversation, question, collection_name, history, run_id)
 
     async def _stream(
         self,
@@ -96,6 +100,7 @@ class ChatService:
         question: str,
         collection_name: str,
         history: list[Message],
+        run_id: UUID,
     ) -> AsyncIterator[str]:
         initial_state: RAGState = {
             "question": question,
@@ -106,9 +111,11 @@ class ChatService:
             "answer": "",
         }
 
+        config = {"run_id": run_id, "run_name": "rag-chat"}
+
         buffer: list[str] = []
         try:
-            async for event in rag_graph.astream_events(initial_state, version="v2"):
+            async for event in rag_graph.astream_events(initial_state, config, version="v2"):
                 if event["event"] == "on_chat_model_stream":
                     token = event["data"]["chunk"].content
                     if token:

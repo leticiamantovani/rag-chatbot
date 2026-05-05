@@ -40,7 +40,7 @@ def create_embeddings() -> GoogleGenerativeAIEmbeddings:
 
 
 def create_model():
-    return init_chat_model("google_genai:gemini-2.0-flash")
+    return init_chat_model("google_genai:gemini-2.5-flash")
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
